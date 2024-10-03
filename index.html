@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRMS - Home</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        h2 {
+            color: #555;
+        }
+        form {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            transition: border 0.3s;
+        }
+        input:focus, select:focus {
+            border-color: #28a745;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        #attendanceDetails div {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Welcome to the HRMS Home Page</h1>
+    
+    <!-- Add New Employee Section -->
+    <h2>Add New Employee</h2>
+    <form id="employeeForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="designation">Designation:</label>
+        <input type="text" id="designation" name="designation" required>
+
+        <label for="department">Department:</label>
+        <input type="text" id="department" name="department" required>
+
+        <label for="date_of_joining">Date of Joining:</label>
+        <input type="date" id="date_of_joining" name="date_of_joining" required>
+
+        <button type="submit">Add Employee</button>
+    </form>
+
+    <!-- Employee List Section -->
+    <h2>Employee List</h2>
+    <div class="search-container">
+        <input type="text" id="searchEmployee" placeholder="Search Employee" onkeyup="searchEmployee()" aria-label="Search Employee">
+    </div>
+    <ul id="employeeList"></ul>
+    
+    <!-- Add Mark Attendance Section -->
+    <h2>Mark Attendance</h2>
+    <form id="attendanceForm">
+        <label for="employee_name">Employee Name:</label>
+        <input type="text" id="employee_name" name="employee_name" required>
+    
+        <label for="attendance_date">Date:</label>
+        <input type="date" id="attendance_date" name="attendance_date" required>
+    
+        <label for="status">Status:</label>
+        <select id="status" name="status">
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+        </select>
+    
+        <button type="submit">Mark Attendance</button>
+    </form>
+    
+    <!-- Attendance Details Section -->
+    <h2>Attendance Details</h2>
+    <div id="attendanceDetails"></div>
+    
+    <!-- Department Report Section -->
+    <h2>Department Report</h2>
+    <button id="loadReport">Load Department Report</button>
+    <table id="departmentReport" class="hidden" style="width:100%; border-collapse:collapse; margin-top:10px;">
+        <thead>
+            <tr>
+                <th>Department</th>
+                <th>Employee Count</th>
+            </tr>
+        </thead>
+        <tbody id="reportBody"></tbody>
+    </table>
+    
+    <script>
+        // Add Employee Form Submit Handler
+        document.getElementById('employeeForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const designation = document.getElementById('designation').value;
+            const department = document.getElementById('department').value;
+            const date_of_joining = document.getElementById('date_of_joining').value;
+
+            const employeeData = {
+                name: name,
+                designation: designation,
+                department: department,
+                date_of_joining: date_of_joining
+            };
+
+            fetch('/add_employee', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(employeeData),
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Failed to add employee.');
+            })
+            .then(data => {
+                alert(data.message);
+                loadEmployees(); // Refresh the employee list
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        // Search Employee Function
+        function searchEmployee() {
+            const searchValue = document.getElementById('searchEmployee').value;
+            fetch(`/employees?name=${searchValue}`)
+            .then(response => response.json())
+            .then(data => {
+                const employeeList = document.getElementById('employeeList');
+                employeeList.innerHTML = ''; // Clear the list
+                data.forEach(emp => {
+                    const li = document.createElement('li');
+                    li.textContent = `${emp.name} - ${emp.designation} - ${emp.department}`;
+                    employeeList.appendChild(li);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Load Employees Function
+        function loadEmployees() {
+            fetch('/employees')
+            .then(response => response.json())
+            .then(data => {
+                const employeeList = document.getElementById('employeeList');
+                employeeList.innerHTML = ''; // Clear the list
+                data.forEach(emp => {
+                    const li = document.createElement('li');
+                    li.textContent = `${emp.name} - ${emp.designation} - ${emp.department}`;
+                    employeeList.appendChild(li);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Attendance Form Submit Handler
+        document.getElementById('attendanceForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const employee_name = document.getElementById('employee_name').value;
+            const date = document.getElementById('attendance_date').value;
+            const status = document.getElementById('status').value;
+
+            // Fetch employees based on the entered name
+            fetch(`/employees?name=${employee_name}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length === 0) {
+                    alert('Employee not found.');
+                    return;
+                }
+                const employee_id = data[0].id; // Get the ID of the first matching employee
+
+                const attendanceData = {
+                    employee_id: employee_id,
+                    date: date,
+                    status: status
+                };
+
+                return fetch('/mark_attendance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(attendanceData),
+                });
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Failed to mark attendance.');
+            })
+            .then(data => {
+                alert(data.message);
+                getAttendance(data.employee_id);  // Fetch attendance details using the ID from the response
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        // Get Attendance Details Function
+        function getAttendance(employee_id) {
+            fetch(`/attendance/${employee_id}`)
+            .then(response => response.json())
+            .then(data => {
+                const attendanceDetails = document.getElementById('attendanceDetails');
+                attendanceDetails.innerHTML = ''; // Clear previous details
+                data.attendance.forEach(record => {
+                    const div = document.createElement('div');
+                    div.textContent = `Date: ${record.date}, Status: ${record.status}`;
+                    attendanceDetails.appendChild(div);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Load Department Report
+        document.getElementById('loadReport').addEventListener('click', function() {
+            fetch('/department_report')
+            .then(response => response.json())
+            .then(data => {
+                const reportBody = document.getElementById('reportBody');
+                reportBody.innerHTML = ''; // Clear previous report
+                Object.keys(data).forEach(dept => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${dept}</td><td>${data[dept]}</td>`;
+                    reportBody.appendChild(row);
+                });
+                document.getElementById('departmentReport').classList.remove('hidden'); // Show report table
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        // Load employees on page load
+        window.onload = loadEmployees;
+    </script>
+</body>
+</html>
